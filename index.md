@@ -1,4 +1,4 @@
-# Tech me
+# Tech Me
 
 ## Articles
 

@@ -1,5 +1,3 @@
-# Tech Me
-
 ## Articles
 
 ### Table of Contents

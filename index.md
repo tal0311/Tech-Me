@@ -2,5 +2,5 @@
 
 ### Table of Contents
 - [The Case Against the Store](./state-management.md)
-- [React Query Guide](./react-query-guide.md)
+- [Importance of prototyping.md](./Importance-of-prototyping.md)
 - [Vue Query with Script Setup](./vue-query.md)

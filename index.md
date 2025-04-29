@@ -1,7 +1,4 @@
----
-layout: home
-title: "מאמרים טכנולוגיים"
----
+
 
 <div dir="rtl">
 

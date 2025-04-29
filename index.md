@@ -1,7 +1,3 @@
----
-layout: home
-title: מאמרים טכנולוגיים
----
 ברוכים הבאים! 👋  
 כאן תמצאו אוסף של מאמרים שכתבתי על פיתוח Backend, אבטחת מידע, אוטומציה ועוד.
 

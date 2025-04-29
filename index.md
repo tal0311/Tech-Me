@@ -1,3 +1,9 @@
+---
+layout: home
+title: "מאמרים טכנולוגיים"
+---
+
+<div dir="rtl">
 
 ברוכים הבאים! 👋  
 כאן תמצאו אוסף של מאמרים שכתבתי על פיתוח Backend, אבטחת מידע, אוטומציה ועוד.
@@ -8,3 +14,5 @@
 - [Importance of Prototyping](./Importance-of-prototyping.md)
 - [Environments from Day One](./environments-from-day-one.md)
 - [Rate Limiter – The Gatekeeper](./rate-limiter.md)
+
+</div>

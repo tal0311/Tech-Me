@@ -1,7 +1,4 @@
----
-layout: default
-title: "תן גז לשרת, לא להאקרים: המדריך האמיתי ל-Rate Limiting"
----
+
 
 <div dir="rtl">
 

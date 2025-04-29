@@ -1,7 +1,13 @@
-## Articles
+---
+layout: home
+title: מאמרים טכנולוגיים
+---
+ברוכים הבאים! 👋  
+כאן תמצאו אוסף של מאמרים שכתבתי על פיתוח Backend, אבטחת מידע, אוטומציה ועוד.
 
-### Table of Contents
+## 📚 מאמרים אחרונים
+
 - [The Case Against the Store](./state-management.md)
-- [Importance of prototyping.md](./Importance-of-prototyping.md)
-- [Environments from day one](./environments-from-day-one.md)
-- [Rate limiter The gatekeeper](./rate-limiter.md)
+- [Importance of Prototyping](./Importance-of-prototyping.md)
+- [Environments from Day One](./environments-from-day-one.md)
+- [Rate Limiter – The Gatekeeper](./rate-limiter.md)

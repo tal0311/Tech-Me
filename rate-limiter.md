@@ -13,7 +13,8 @@
 #### הגישה הלא נכונה: לימיטר גלובלי (ואל תעשו את זה)
 
 לפני שנראה איך עושים נכון – בואו נראה מה לא לעשות: להחיל Rate Limiter אחיד על כל הבקשות.
-
+<pre>
+  
 ```js
 const rateLimit = require('express-rate-limit');
 
@@ -24,6 +25,7 @@ const globalLimiter = rateLimit({
 
 app.use(globalLimiter);
 ```
+</pre>
 
 מה הבעיה פה?
 - כל הבקשות מקבלות יחס זהה: קריאה ל-`/about-us` וקריאה ל-`/api/login` נחשבות אותו דבר.

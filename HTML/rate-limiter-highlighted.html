@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>תן גז לשרת, לא להאקרים</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <style>
+    body {
+      font-family: sans-serif;
+      direction: rtl;
+      padding: 2rem;
+      line-height: 1.7;
+      background: #f9f9f9;
+      color: #333;
+    }
+    pre {
+      background: #f0f0f0;
+      padding: 1rem;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: monospace;
+    }
+    h1, h2, h3 {
+      color: #111;
+    }
+  </style>
+</head>
+<body>
+<h2>איך בונים Rate Limiter כמו מקצוענים (בלי לחנוק את השרת או את המשתמשים)</h2>
+<p>רייט לימיטר (Rate Limiter) הוא אחד הכלים הכי בסיסיים בארסנל של כל מפתח Backend רציני – אבל כמו כל כלי חזק, אפשר להשתמש בו נכון... ואפשר להפוך אותו למלכודת.</p>
+<p>בואו נבנה את זה חכם:</p>
+<hr>
+<h4>הגישה הלא נכונה: לימיטר גלובלי (ואל תעשו את זה)</h4>
+<p>לפני שנראה איך עושים נכון – בואו נראה מה לא לעשות: להחיל Rate Limiter אחיד על כל הבקשות.</p>
+<pre><code class="language-js">
+const rateLimit = require('express-rate-limit');
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 דקות
+  max: 100, // הגבלה גלובלית לכל הבקשות
+});
+
+app.use(globalLimiter);
+</code></pre>
+<p>מה הבעיה פה?</p>
+<ul>
+  <li>כל הבקשות מקבלות יחס זהה: קריאה ל-<code>/about-us</code> וקריאה ל-<code>/api/login</code> נחשבות אותו דבר.</li>
+  <li>אין הבחנה בין נתיבים רגישים לנתיבים רגילים.</li>
+  <li>תוקפים יכולים להציף נתיבים לא חשובים ולבזבז את מגבלת הבקשות של משתמשים אמיתיים.</li>
+  <li>המשתמשים הרגילים חווים חסימות מיותרות.</li>
+</ul>
+<p><strong>לימיטר גלובלי הוא מתכון לבאסה.</strong></p>
+<hr>
+<h4>הגישה הנכונה: להחמיר איפה שצריך, לשחרר איפה שאפשר</h4>
+<pre><code class="language-js">
+const generalLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 500,
+});
+app.use('/api/public', generalLimiter);
+</code></pre>
+<pre><code class="language-js">
+const mediumSensitivityLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+});
+app.use('/api/user', mediumSensitivityLimiter);
+</code></pre>
+<pre><code class="language-js">
+const highSensitivityLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: 'יותר מדי ניסיונות. נסה שוב מאוחר יותר.',
+});
+app.use('/api/auth', highSensitivityLimiter);
+</code></pre>
+<hr>
+<h4>הרחבה: חסימת IP סוררים (בלי לדרוך על לקוחות טובים)</h4>
+<pre><code class="language-js">
+const blockedIps = new Set();
+const whiteListedIps = new Set(['127.0.0.1', '192.168.1.100']);
+
+const strictLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  handler: (req, res) => {
+    blockedIps.add(req.ip);
+    res.status(429).json({ message: 'נחסמת זמנית בגלל עודף בקשות.' });
+  },
+  skip: (req) => whiteListedIps.has(req.ip),
+});
+
+app.use((req, res, next) => {
+  if (blockedIps.has(req.ip)) {
+    return res.status(403).json({ message: 'הגישה נחסמה.' });
+  }
+  next();
+});
+
+app.use(strictLimiter);
+</code></pre>
+<hr>
+<h3>לסיכום</h3>
+<p>לימיטר טוב הוא לא מחסום – הוא רמזור חכם. כזה שיודע מתי לעצור, מתי להאט, ומתי לתת זכות קדימה למשתמשים הטובים.</p>
+<p><strong>תכנון נכון של מגבלות לא רק מגן על המערכת – הוא יוצר שירות יציב, מהיר וחווייתי גם בעומסים.</strong></p>
+</body>
+</html>

@@ -113,6 +113,7 @@ app.use(strictLimiter);
 
   <script>
 window.addEventListener('message', (event) => {
+console.log( 'MSG from host',event)
   if (event.data.q) {
     highlightText('body', event.data.q)
   }

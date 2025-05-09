@@ -111,24 +111,5 @@ app.use(strictLimiter);
 <p><strong>תכנון נכון של מגבלות לא רק מגן על המערכת – הוא יוצר שירות יציב, מהיר וחווייתי גם בעומסים.</strong></p>
 
 
-  <script>
-window.addEventListener('message', (event) => {
-console.log( 'MSG from host',event)
-  if (event.data.q) {
-    highlightText('body', event.data.q)
-  }
-})
-
-    function highlightText(containerSelector, searchTerm) {
-	if (!searchTerm) return
-
-	const container = document.querySelector(containerSelector)
-	if (!container) return
-
-	const regex = new RegExp(`(${searchTerm})`, 'gi')
-
-	container.innerHTML = container.innerHTML.replace(regex, '<mark>$1</mark>')
-}
-</script>
 </body>
 </html>

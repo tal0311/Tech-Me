@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <title>NoSQL Database Design Guide</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <style>
+    body {
+      font-family: sans-serif;
+      direction: ltr;
+      line-height: 1.7;
+      background: #f9f9f9;
+      color: #333;
+      padding: 2rem;
+    }
+    pre {
+      background: #f0f0f0;
+      padding: 1rem;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    code {
+      direction: ltr;
+      font-family: monospace;
+    }
+    h1, h2, h3 {
+      color: #111;
+    }
+  </style>
+</head>
+<body>
+
+<h1>NoSQL Database Design Guide</h1>
+
+<h2>Why choose a NoSQL database?</h2>
+<ul>
+  <li><strong>✅ Structural Flexibility</strong> – No need to define rigid schemas upfront. Fields can be added or modified without migrations.</li>
+  <li><strong>✅ Fast Adaptation</strong> – Great for MVPs and startups where product requirements change frequently.</li>
+  <li><strong>✅ Partial or Duplicated Data Storage</strong> – Store only relevant parts or duplicate for performance gains.</li>
+  <li><strong>✅ Horizontal Scalability</strong> – Easier to distribute data across servers than relational databases.</li>
+  <li><strong>✅ Fast Simple Queries</strong> – Retrieving a single document is fast and doesn’t require joins.</li>
+  <li><strong>✅ Lower Maintenance</strong> – No complex schema management, migrations, or DBAs needed.</li>
+</ul>
+
+<h2>📌 When to Nest vs. Use a Separate Collection?</h2>
+<p>The key question is not "what logically belongs together" but rather "how do we access this data?"</p>
+
+<table border="1" cellpadding="8">
+  <thead>
+    <tr>
+      <th>Criterion</th>
+      <th>Nest in Document</th>
+      <th>Separate Collection</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Item Count</td>
+      <td>Small</td>
+      <td>Large or Unknown</td>
+    </tr>
+    <tr>
+      <td>Update Frequency</td>
+      <td>Rare</td>
+      <td>Frequent / Independent</td>
+    </tr>
+    <tr>
+      <td>Need for Separate Access</td>
+      <td>No</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>Always Fetched Together</td>
+      <td>Yes</td>
+      <td>No</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>📌 Example: Comments on Posts in a Social Network</h3>
+<p>For low comment volume → nesting may work. For active systems → use a <code>comments</code> collection.</p>
+
+<pre><code class="language-json">{
+  "_id": "comment789",
+  "postId": ObjectId("64ef1a2a4f1c2b6a7e8d1234"),
+  "user": {
+    "userId": ObjectId("64ef1b3c9d8e4f2c6a7b5678"),
+    "fullName": "Ronit Cohen",
+    "imgUrl": "https://cdn.com/u321.jpg"
+  },
+  "text": "Great post!",
+  "createdAt": "2025-05-28T14:00:00Z"
+}</code></pre>
+
+<h4>⚠️ Use <code>userId</code> Instead of <code>_id</code> Inside Nested Objects</h4>
+<p>MongoDB reserves <code>_id</code> for top-level document identity and indexing. Use <code>userId</code> in nested objects to avoid confusion and maintainability issues.</p>
+
+<h2>🔄 About <code>lookup</code> and Denormalization</h2>
+<p>With denormalization, you explicitly trade perfect data freshness for performance. You store duplicated user data (e.g., name, avatar) without updating it globally if changed.</p>
+
+<p><strong>Security Note:</strong> Only duplicate fields that are meant for display. Do not duplicate sensitive fields like <code>email</code> or <code>role</code> in public views.</p>
+
+<h3>Example: Avoiding <code>lookup</code> with Duplication</h3>
+<pre><code class="language-json">{
+  "postId": ObjectId("64ef1a2a4f1c2b6a7e8d1234"),
+  "postCategory": "Tech",
+  "text": "Comment!"
+}</code></pre>
+
+<table border="1" cellpadding="8">
+  <thead>
+    <tr>
+      <th>Scenario</th>
+      <th>Needs <code>lookup</code>?</th>
+      <th>Recommendation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Comments by <code>postId</code></td>
+      <td>❌</td>
+      <td>Direct fetch without join</td>
+    </tr>
+    <tr>
+      <td>Comments + post info</td>
+      <td>✅ or duplication</td>
+      <td>Prefer duplication for speed</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>❗ Avoiding Joins: A Core Principle</h2>
+<p>Joins (via <code>$lookup</code>) are expensive. Occasional usage is fine — regular use indicates poor design.</p>
+
+<h3>❌ Costly Join</h3>
+<pre><code class="language-js">db.posts.aggregate([
+  {
+    $lookup: {
+      from: 'users',
+      localField: 'authorId',
+      foreignField: '_id',
+      as: 'authorInfo'
+    }
+  }
+])</code></pre>
+
+<h3>✅ Embed Relevant Author Info</h3>
+<pre><code class="language-json">{
+  "author": {
+    "authorId": ObjectId("64ef1d9a7c6e4a1f8b9c4321"),
+    "fullName": "Noam Cohen",
+    "imgUrl": "https://cdn.com/u789.jpg"
+  }
+}</code></pre>
+
+<h2>🔗 Managing Relationships</h2>
+<table border="1" cellpadding="8">
+  <thead>
+    <tr>
+      <th>Relationship Type</th>
+      <th>Recommendation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>One-to-Few / One-to-Small-Many</td>
+      <td>Embed</td>
+    </tr>
+    <tr>
+      <td>Large One-to-Many / Many-to-Many</td>
+      <td>Separate Collection + References</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Examples:</h3>
+<ul>
+  <li>User email addresses → embed</li>
+  <li>Users and groups → use <code>userId</code> and <code>groupId</code> in separate collections</li>
+</ul>
+
+<h2>✅ Final Thoughts</h2>
+<ul>
+  <li>Design around how data is accessed</li>
+  <li>Be intentional with duplication</li>
+  <li>Denormalization is a tool, not a flaw</li>
+  <li>Use joins sparingly — if at all</li>
+</ul>
+
+</body>
+</html>

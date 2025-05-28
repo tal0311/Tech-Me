@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>NoSQL Database Design Guide</title>
@@ -9,10 +9,9 @@
   <style>
     body {
       font-family: sans-serif;
-      direction: ltr;
-      line-height: 1.7;
       background: #f9f9f9;
       color: #333;
+      line-height: 1.7;
       padding: 2rem;
     }
     pre {
@@ -22,171 +21,120 @@
       overflow-x: auto;
     }
     code {
-      direction: ltr;
       font-family: monospace;
     }
-    h1, h2, h3 {
+    h1, h2, h3, h4 {
       color: #111;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+      text-align: left;
+    }
+    th {
+      background-color: #eee;
     }
   </style>
 </head>
 <body>
 
-<h1>NoSQL Database Design Guide</h1>
+<h1>📘 NoSQL Database Design Guide</h1>
 
-<h2>Why choose a NoSQL database?</h2>
+<h2>🚀 Why choose a NoSQL database?</h2>
 <ul>
-  <li><strong>✅ Structural Flexibility</strong> – No need to define rigid schemas upfront. Fields can be added or modified without migrations.</li>
-  <li><strong>✅ Fast Adaptation</strong> – Great for MVPs and startups where product requirements change frequently.</li>
-  <li><strong>✅ Partial or Duplicated Data Storage</strong> – Store only relevant parts or duplicate for performance gains.</li>
-  <li><strong>✅ Horizontal Scalability</strong> – Easier to distribute data across servers than relational databases.</li>
-  <li><strong>✅ Fast Simple Queries</strong> – Retrieving a single document is fast and doesn’t require joins.</li>
-  <li><strong>✅ Lower Maintenance</strong> – No complex schema management, migrations, or DBAs needed.</li>
+  <li>🔧 <strong>Flexible Structure</strong> – No need for rigid schemas or migrations.</li>
+  <li>🖥️ <strong>UI-Oriented</strong> – Store documents exactly as used by the front-end.</li>
+  <li>⚡ <strong>Performance</strong> – Fast reads without expensive joins.</li>
 </ul>
 
-<h2>📌 When to Nest vs. Use a Separate Collection?</h2>
-<p>The key question is not "what logically belongs together" but rather "how do we access this data?"</p>
+<h2>🧩 When to Nest vs. Separate Collections?</h2>
+<p>The key is not “logical grouping” but “access pattern”.</p>
 
-<table border="1" cellpadding="8">
+<table>
   <thead>
-    <tr>
-      <th>Criterion</th>
-      <th>Nest in Document</th>
-      <th>Separate Collection</th>
-    </tr>
+    <tr><th>Nesting (embed)</th><th>Separate Collection</th></tr>
   </thead>
   <tbody>
-    <tr>
-      <td>Item Count</td>
-      <td>Small</td>
-      <td>Large or Unknown</td>
-    </tr>
-    <tr>
-      <td>Update Frequency</td>
-      <td>Rare</td>
-      <td>Frequent / Independent</td>
-    </tr>
-    <tr>
-      <td>Need for Separate Access</td>
-      <td>No</td>
-      <td>Yes</td>
-    </tr>
-    <tr>
-      <td>Always Fetched Together</td>
-      <td>Yes</td>
-      <td>No</td>
-    </tr>
+    <tr><td>Used only with the parent</td><td>Accessed independently</td></tr>
+    <tr><td>Small number of items</td><td>Large or growing</td></tr>
+    <tr><td>For display only</td><td>Indexed or queried directly</td></tr>
   </tbody>
 </table>
 
-<h3>📌 Example: Comments on Posts in a Social Network</h3>
-<p>For low comment volume → nesting may work. For active systems → use a <code>comments</code> collection.</p>
-
+<h3>📝 Example: Posts and Comments</h3>
 <pre><code class="language-json">{
-  "_id": "comment789",
-  "postId": ObjectId("64ef1a2a4f1c2b6a7e8d1234"),
-  "user": {
-    "userId": ObjectId("64ef1b3c9d8e4f2c6a7b5678"),
-    "fullName": "Ronit Cohen",
-    "imgUrl": "https://cdn.com/u321.jpg"
-  },
-  "text": "Great post!",
-  "createdAt": "2025-05-28T14:00:00Z"
-}</code></pre>
-
-<h4>⚠️ Use <code>userId</code> Instead of <code>_id</code> Inside Nested Objects</h4>
-<p>MongoDB reserves <code>_id</code> for top-level document identity and indexing. Use <code>userId</code> in nested objects to avoid confusion and maintainability issues.</p>
-
-<h2>🔄 About <code>lookup</code> and Denormalization</h2>
-<p>With denormalization, you explicitly trade perfect data freshness for performance. You store duplicated user data (e.g., name, avatar) without updating it globally if changed.</p>
-
-<p><strong>Security Note:</strong> Only duplicate fields that are meant for display. Do not duplicate sensitive fields like <code>email</code> or <code>role</code> in public views.</p>
-
-<h3>Example: Avoiding <code>lookup</code> with Duplication</h3>
-<pre><code class="language-json">{
-  "postId": ObjectId("64ef1a2a4f1c2b6a7e8d1234"),
-  "postCategory": "Tech",
-  "text": "Comment!"
-}</code></pre>
-
-<table border="1" cellpadding="8">
-  <thead>
-    <tr>
-      <th>Scenario</th>
-      <th>Needs <code>lookup</code>?</th>
-      <th>Recommendation</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Comments by <code>postId</code></td>
-      <td>❌</td>
-      <td>Direct fetch without join</td>
-    </tr>
-    <tr>
-      <td>Comments + post info</td>
-      <td>✅ or duplication</td>
-      <td>Prefer duplication for speed</td>
-    </tr>
-  </tbody>
-</table>
-
-<h2>❗ Avoiding Joins: A Core Principle</h2>
-<p>Joins (via <code>$lookup</code>) are expensive. Occasional usage is fine — regular use indicates poor design.</p>
-
-<h3>❌ Costly Join</h3>
-<pre><code class="language-js">db.posts.aggregate([
-  {
-    $lookup: {
-      from: 'users',
-      localField: 'authorId',
-      foreignField: '_id',
-      as: 'authorInfo'
+  "_id": ObjectId("64ef1a2a4f1c2b6a7e8d1234"),
+  "authorId": ObjectId("64ef1b3c9d8e4f2c6a7b5678"),
+  "text": "It was a good day!",
+  "comments": [
+    {
+      "commentId": ObjectId("64ef1f3a5c9a4a1b9d7c8765"),
+      "userId": ObjectId("64ef1e9a3c4e8f2c7a6d9087"),
+      "text": "Glad to hear!",
+      "likes": 4
     }
-  }
-])</code></pre>
-
-<h3>✅ Embed Relevant Author Info</h3>
-<pre><code class="language-json">{
-  "author": {
-    "authorId": ObjectId("64ef1d9a7c6e4a1f8b9c4321"),
-    "fullName": "Noam Cohen",
-    "imgUrl": "https://cdn.com/u789.jpg"
-  }
+  ]
 }</code></pre>
 
-<h2>🔗 Managing Relationships</h2>
-<table border="1" cellpadding="8">
-  <thead>
-    <tr>
-      <th>Relationship Type</th>
-      <th>Recommendation</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>One-to-Few / One-to-Small-Many</td>
-      <td>Embed</td>
-    </tr>
-    <tr>
-      <td>Large One-to-Many / Many-to-Many</td>
-      <td>Separate Collection + References</td>
-    </tr>
-  </tbody>
-</table>
+<h3>📤 Moving to a collection</h3>
+<pre><code class="language-json">{
+  "_id": ObjectId("64ef1f3a5c9a4a1b9d7c8765"),
+  "postId": ObjectId("64ef1a2a4f1c2b6a7e8d1234"),
+  "userId": ObjectId("64ef1e9a3c4e8f2c7a6d9087"),
+  "text": "Glad to hear!",
+  "likes": [ObjectId("64ef1d9a7c6e4a1f8b9c4321"), ObjectId("64ef1c2a8b7f5e3d6a4c7890")]
+}</code></pre>
 
-<h3>Examples:</h3>
+<h2>💡 Avoiding Lookups</h2>
+<p>Duplicate minimal display info instead of joining from other collections.</p>
+
+<pre><code class="language-json">{
+  "userId": ObjectId("64ef1e9a3c4e8f2c7a6d9087"),
+  "userName": "Roni Levi",
+  "userImg": "https://cdn.com/u456.jpg"
+}</code></pre>
+
+<p>This is <strong>denormalization</strong> – a deliberate trade-off: speed over freshness.</p>
+
+<h3>❗ Never duplicate sensitive data</h3>
 <ul>
-  <li>User email addresses → embed</li>
-  <li>Users and groups → use <code>userId</code> and <code>groupId</code> in separate collections</li>
+  <li>❌ Don't duplicate email, roles, or credentials</li>
+  <li>✅ It's okay to duplicate name, avatar, timestamp</li>
 </ul>
 
-<h2>✅ Final Thoughts</h2>
+<h3>🧠 Note on freshness vs. trust</h3>
+<p>We don’t aim to keep duplicated data always updated. We trust the source of truth and duplicate for rendering convenience.</p>
+<p>Example: If a user changes their avatar, we don’t update 10,000 comments.</p>
+
+<h2>🔍 When you must use <code>$lookup</code></h2>
+<pre><code class="language-js">{
+  $lookup: {
+    from: 'users',
+    localField: 'userId',
+    foreignField: '_id',
+    as: 'userData'
+  }
+}</code></pre>
+<p>Use it when essential info isn't duplicated. Avoid using it by default.</p>
+
+<h2>🔐 Security considerations</h2>
 <ul>
-  <li>Design around how data is accessed</li>
-  <li>Be intentional with duplication</li>
-  <li>Denormalization is a tool, not a flaw</li>
-  <li>Use joins sparingly — if at all</li>
+  <li>🛡️ Never replicate sensitive info to front-end–visible collections</li>
+  <li>🧱 Denormalization should be <strong>granular</strong>, not <strong>generic</strong></li>
+</ul>
+<p>If you must duplicate, be explicit. Never include things like roles or permission scopes in embedded structures.</p>
+
+<h2>📦 Summary</h2>
+<ul>
+  <li>🧭 Design for access, not abstract schemas</li>
+  <li>📤 Denormalize with care</li>
+  <li>❌ Avoid joins whenever possible</li>
+  <li>🔒 Protect user data even in display-level info</li>
 </ul>
 
 </body>
